@@ -3,9 +3,10 @@ package app.domain.payment.controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import app.domain.payment.PaymentService;
+import app.domain.payment.service.PaymentService;
 import app.domain.payment.model.dto.request.CancelPaymentRequest;
 import app.domain.payment.model.dto.request.PaymentConfirmRequest;
 import app.domain.payment.model.dto.request.PaymentFailRequest;
@@ -26,8 +27,8 @@ public class PaymentController {
 
 	@Operation(summary = "결제 승인 API", description = "토스페이먼츠를 통해 결제를 승인합니다.")
 	@PostMapping("/confirm")
-	public ApiResponse<String> confirm(@Valid @RequestBody PaymentConfirmRequest request) {
-		String result = paymentService.confirmPayment(request);
+	public ApiResponse<String> confirm(@Valid @RequestBody PaymentConfirmRequest request, @RequestParam Long userId) {
+		String result = paymentService.confirmPayment(request, userId);
 		return ApiResponse.onSuccess(PaymentSuccessStatus.PAYMENT_CONFIRMED, result);
 	}
 
@@ -40,8 +41,8 @@ public class PaymentController {
 
 	@Operation(summary = "결제 취소 처리 API", description = "토스페이먼츠를 통해 결제를 취소합니다.")
 	@PostMapping("/cancel")
-	public ApiResponse<String> cancelPayment(@Valid @RequestBody CancelPaymentRequest request) {
-		String result = paymentService.cancelPayment(request);
+	public ApiResponse<String> cancelPayment(@Valid @RequestBody CancelPaymentRequest request, @RequestParam Long userId) {
+		String result = paymentService.cancelPayment(request, userId);
 		return ApiResponse.onSuccess(PaymentSuccessStatus.PAYMENT_CANCELLED, result);
 	}
 }

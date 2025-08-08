@@ -1,24 +1,19 @@
-package app.domain.payment;
+package app.domain.payment.service;
 
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.UUID;
 
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
-import app.domain.cart.service.CartService;
-import app.domain.order.model.entity.Orders;
-import app.domain.order.model.entity.enums.OrderStatus;
-import app.domain.order.model.repository.OrdersRepository;
 import app.domain.payment.model.dto.request.CancelPaymentRequest;
+import app.domain.payment.model.dto.request.OrderInfo;
 import app.domain.payment.model.dto.request.PaymentConfirmRequest;
 import app.domain.payment.model.dto.request.PaymentFailRequest;
 import app.domain.payment.model.entity.Payment;
@@ -27,8 +22,6 @@ import app.domain.payment.model.entity.enums.PaymentStatus;
 import app.domain.payment.model.repository.PaymentEtcRepository;
 import app.domain.payment.model.repository.PaymentRepository;
 import app.domain.payment.status.PaymentErrorStatus;
-import app.domain.user.model.entity.User;
-import app.global.SecurityUtil;
 import app.global.apiPayload.code.status.ErrorStatus;
 import app.global.apiPayload.exception.GeneralException;
 import jakarta.transaction.Transactional;
@@ -43,18 +36,11 @@ public class PaymentService {
 	@Value("${TOSS_URL}")
 	private String tossUrl;
 
-	private final OrdersRepository ordersRepository;
 	private final PaymentRepository paymentRepository;
 	private final PaymentEtcRepository paymentEtcRepository;
-	private final CartService cartService;
-	private final SecurityUtil securityUtil;
+	private final OrderServiceClient orderServiceClient;
 
-	public Orders getOrderById(UUID orderId) {  // order 조회
-		return ordersRepository.findById(orderId)
-			.orElseThrow(() -> new GeneralException(ErrorStatus.ORDER_NOT_FOUND));
-	}
-
-	private String generateIdempotencyKey(Long userId, String orderId) {  // 멱등성 키 생성하는 함수/ 멱등성키를 헤더에 실어 보내면 확인 후 중복처리 안 함.  결제환불 요청
+	private String generateIdempotencyKey(Long userId, String orderId) {
 		try {
 			String input = userId + orderId;
 			MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -65,7 +51,7 @@ public class PaymentService {
 		}
 	}
 
-	public String callTossConfirmApi(PaymentConfirmRequest request, Long userId) {  // 승인 API 요청
+	public String callTossConfirmApi(PaymentConfirmRequest request, Long userId) {
 		try {
 			String widgetSecretKey = tossSecretKey;
 			Base64.Encoder encoder = Base64.getEncoder();
@@ -102,7 +88,7 @@ public class PaymentService {
 				responseBuilder.append(line);
 			}
 			String responseBody = responseBuilder.toString();
-			return (isSuccess ? "success:" : "fail:") + responseBody;  // 성공/실패 응답
+			return (isSuccess ? "success:" : "fail:") + responseBody;
 		} catch (Exception e) {
 			throw new GeneralException(PaymentErrorStatus.TOSS_API_ERROR);
 		}
@@ -150,27 +136,25 @@ public class PaymentService {
 		}
 	}
 
-	@PreAuthorize("hasAuthority('CUSTOMER')")
 	@Transactional
-	public String confirmPayment(PaymentConfirmRequest request) {
-		User user = securityUtil.getCurrentUser();  // userId를 매개변수로 입력 받아 사용하는 것으로 대체
-		Orders order = getOrderById(UUID.fromString(request.getOrderId()));  // orderId를 order서비스에 보내고 총 금액을 받아오기
+	public String confirmPayment(PaymentConfirmRequest request, Long userId) {
+		OrderInfo orderInfo = orderServiceClient.getOrderInfo(UUID.fromString(request.getOrderId()));
 		long requestAmount = Long.parseLong(request.getAmount());
-		if (order.getTotalPrice() != requestAmount) {
+		if (orderInfo.getTotalPrice() != requestAmount) {
 			throw new GeneralException(PaymentErrorStatus.PAYMENT_AMOUNT_MISMATCH);
 		}
 
-		String responseWithPrefix = callTossConfirmApi(request, user.getUserId()); // 승인 API 요청
+		String responseWithPrefix = callTossConfirmApi(request, userId);
 		boolean isSuccess = responseWithPrefix.startsWith("success:");
 		String responseBody = responseWithPrefix.substring(responseWithPrefix.indexOf(":") + 1); // 승인 결과 응답
 		PaymentStatus paymentStatus = isSuccess ? PaymentStatus.COMPLETED : PaymentStatus.FAILED;
 
 		Payment payment = Payment.builder()
-			.ordersId(order.getOrdersId())
+			.ordersId(UUID.fromString(request.getOrderId()))
 			.paymentKey(request.getPaymentKey())
-			.paymentMethod(order.getPaymentMethod())
+			.paymentMethod(orderInfo.getPaymentMethodEnum())
 			.paymentStatus(paymentStatus)
-			.amount(order.getTotalPrice())
+			.amount(orderInfo.getTotalPrice())
 			.build();
 
 		Payment savedPayment = paymentRepository.save(payment);
@@ -183,42 +167,38 @@ public class PaymentService {
 		paymentEtcRepository.save(paymentEtc);
 
 		if (isSuccess) {
-			cartService.clearCartItems();  // 장바구니 서비스에 장바구니 비우기 요청
+			orderServiceClient.clearOrderCartItems(userId);
 			return "결제 승인이 완료되었습니다. PaymentKey: " + request.getAmount();
 		} else {
 			throw new GeneralException(PaymentErrorStatus.PAYMENT_CONFIRM_FAILED);
 		}
 	}
 
-	@PreAuthorize("hasAuthority('CUSTOMER')")
 	@Transactional
-	public String failSave(PaymentFailRequest request) {  //
-		Orders order = getOrderById(UUID.fromString(request.getOrderId()));  //  orderId, 상태(FAILED)를 string으로 order서비스에 보내면 결제 실패 결과 저장할 수 있게
-		order.updateOrderStatus(OrderStatus.FAILED);
+	public String failSave(PaymentFailRequest request) {
+		orderServiceClient.updateOrderStatus(UUID.fromString(request.getOrderId()), "FAILED");
 		return "결제 실패 처리가 완료되었습니다.";
 	}
 
-	@PreAuthorize("hasAuthority('CUSTOMER')")
 	@Transactional
-	public String cancelPayment(CancelPaymentRequest request) {
-		User user = securityUtil.getCurrentUser();
-		Orders order = getOrderById(request.getOrderId());  // orderId를 order서비스에 보내서 order.isRefundable() 받아오기
+	public String cancelPayment(CancelPaymentRequest request, Long userId) {
+		OrderInfo orderInfo = orderServiceClient.getOrderInfo(request.getOrderId());
 
-		if (!order.isRefundable()) {
+		if (!orderInfo.getIsRefundable()) {
 			throw new GeneralException(PaymentErrorStatus.PAYMENT_NOT_REFUNDABLE);
 		}
 
 		Payment payment = paymentRepository.findByOrdersId(request.getOrderId())
 			.orElseThrow(() -> new GeneralException(ErrorStatus.PAYMENT_NOT_FOUND));
 
-		String responseWithPrefix = callTossCancelApi(payment.getPaymentKey(), request.getCancelReason(), user.getUserId(),
+		String responseWithPrefix = callTossCancelApi(payment.getPaymentKey(), request.getCancelReason(), userId,
 			request.getOrderId());
 		boolean isSuccess = responseWithPrefix.startsWith("success:");
 		String responseBody = responseWithPrefix.substring(responseWithPrefix.indexOf(":") + 1);
 
 		if (isSuccess) {
-			order.updateOrderStatus(OrderStatus.REFUNDED);  // order서비스에 orderId, 상태(REFUNDED)를 string으로 보내서 디비 업데이트하라고 알려줌
-			order.addHistory("cancel", LocalDateTime.now());
+			orderServiceClient.updateOrderStatus(request.getOrderId(), "REFUNDED");
+			orderServiceClient.addOrderHistory(request.getOrderId(), "cancel");
 			payment.updatePaymentStatus(PaymentStatus.CANCELLED);
 		}
 
