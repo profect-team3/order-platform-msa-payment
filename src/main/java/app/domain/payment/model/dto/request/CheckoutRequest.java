@@ -2,7 +2,7 @@ package app.domain.payment.model.dto.request;
 
 import java.util.UUID;
 
-import app.domain.order.model.entity.enums.PaymentMethod;
+import app.domain.payment.model.entity.enums.PaymentMethod;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.AccessLevel;

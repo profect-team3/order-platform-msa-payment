@@ -20,7 +20,7 @@ import lombok.RequiredArgsConstructor;
 @Tag(name = "payment", description = "결제 관련 API")
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/payment")
+@RequestMapping()
 public class PaymentController {
 
 	private final PaymentService paymentService;
