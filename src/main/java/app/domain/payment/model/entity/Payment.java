@@ -2,7 +2,7 @@ package app.domain.payment.model.entity;
 
 import java.util.UUID;
 
-import app.domain.order.model.entity.enums.PaymentMethod;
+import app.domain.payment.model.entity.enums.PaymentMethod;
 import app.domain.payment.model.entity.enums.PaymentStatus;
 import app.global.entity.BaseEntity;
 import jakarta.persistence.Column;
