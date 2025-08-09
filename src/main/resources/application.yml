@@ -25,9 +25,6 @@ spring:
       port: ${REDIS_PORT}
       password: ${REDIS_PASSWORD}
       database: 0
-  ai:
-    openai:
-      api-key: ${OPENAI_API_KEY}
 
 server:
   port: 8085
