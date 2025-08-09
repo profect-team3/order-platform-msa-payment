@@ -146,7 +146,7 @@ public class PaymentService {
 
 		String responseWithPrefix = callTossConfirmApi(request, userId);
 		boolean isSuccess = responseWithPrefix.startsWith("success:");
-		String responseBody = responseWithPrefix.substring(responseWithPrefix.indexOf(":") + 1); // 승인 결과 응답
+		String responseBody = responseWithPrefix.substring(responseWithPrefix.indexOf(":") + 1);
 		PaymentStatus paymentStatus = isSuccess ? PaymentStatus.COMPLETED : PaymentStatus.FAILED;
 
 		Payment payment = Payment.builder()
