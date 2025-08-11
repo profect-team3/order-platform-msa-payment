@@ -1,22 +1,19 @@
-package app.domain.payment.service;
+package app.domain.payment.client;
 
 import java.util.UUID;
 
 import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.beans.factory.annotation.Value;
 
 import app.domain.payment.model.dto.request.OrderInfo;
-import lombok.RequiredArgsConstructor;
 
 @Service
-public class OrderServiceClient {
+public class InternalOrderClient {
 	private final RestTemplate restTemplate;
 
-	public OrderServiceClient(RestTemplate restTemplate) {
+	public InternalOrderClient(RestTemplate restTemplate) {
 		this.restTemplate = restTemplate;
 	}
 
@@ -24,7 +21,7 @@ public class OrderServiceClient {
 	private String orderServiceUrl;
 
 	public boolean isOrderExists(UUID orderId) {
-		String url = orderServiceUrl+"/internal/order"+orderId+"/exists";
+		String url = orderServiceUrl+"/internal/order/"+orderId+"/exists";
 		Boolean exists = restTemplate.getForObject(url, Boolean.class);
 		return Boolean.TRUE.equals(exists);
 	}

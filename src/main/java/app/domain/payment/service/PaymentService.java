@@ -12,6 +12,7 @@ import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import app.domain.payment.client.InternalOrderClient;
 import app.domain.payment.model.dto.request.CancelPaymentRequest;
 import app.domain.payment.model.dto.request.OrderInfo;
 import app.domain.payment.model.dto.request.PaymentConfirmRequest;
@@ -38,7 +39,7 @@ public class PaymentService {
 
 	private final PaymentRepository paymentRepository;
 	private final PaymentEtcRepository paymentEtcRepository;
-	private final OrderServiceClient orderServiceClient;
+	private final InternalOrderClient internalOrderClient;
 
 	private String generateIdempotencyKey(Long userId, String orderId) {
 		try {
@@ -138,7 +139,7 @@ public class PaymentService {
 
 	@Transactional
 	public String confirmPayment(PaymentConfirmRequest request, Long userId) {
-		OrderInfo orderInfo = orderServiceClient.getOrderInfo(UUID.fromString(request.getOrderId()));
+		OrderInfo orderInfo = internalOrderClient.getOrderInfo(UUID.fromString(request.getOrderId()));
 		long requestAmount = Long.parseLong(request.getAmount());
 		if (orderInfo.getTotalPrice() != requestAmount) {
 			throw new GeneralException(PaymentErrorStatus.PAYMENT_AMOUNT_MISMATCH);
@@ -167,7 +168,7 @@ public class PaymentService {
 		paymentEtcRepository.save(paymentEtc);
 
 		if (isSuccess) {
-			orderServiceClient.clearOrderCartItems(userId);
+			internalOrderClient.clearOrderCartItems(userId);
 			return "결제 승인이 완료되었습니다. PaymentKey: " + request.getAmount();
 		} else {
 			throw new GeneralException(PaymentErrorStatus.PAYMENT_CONFIRM_FAILED);
@@ -176,13 +177,13 @@ public class PaymentService {
 
 	@Transactional
 	public String failSave(PaymentFailRequest request) {
-		orderServiceClient.updateOrderStatus(UUID.fromString(request.getOrderId()), "FAILED");
+		internalOrderClient.updateOrderStatus(UUID.fromString(request.getOrderId()), "FAILED");
 		return "결제 실패 처리가 완료되었습니다.";
 	}
 
 	@Transactional
 	public String cancelPayment(CancelPaymentRequest request, Long userId) {
-		OrderInfo orderInfo = orderServiceClient.getOrderInfo(request.getOrderId());
+		OrderInfo orderInfo = internalOrderClient.getOrderInfo(request.getOrderId());
 
 		if (!orderInfo.getIsRefundable()) {
 			throw new GeneralException(PaymentErrorStatus.PAYMENT_NOT_REFUNDABLE);
@@ -197,8 +198,8 @@ public class PaymentService {
 		String responseBody = responseWithPrefix.substring(responseWithPrefix.indexOf(":") + 1);
 
 		if (isSuccess) {
-			orderServiceClient.updateOrderStatus(request.getOrderId(), "REFUNDED");
-			orderServiceClient.addOrderHistory(request.getOrderId(), "cancel");
+			internalOrderClient.updateOrderStatus(request.getOrderId(), "REFUNDED");
+			internalOrderClient.addOrderHistory(request.getOrderId(), "cancel");
 			payment.updatePaymentStatus(PaymentStatus.CANCELLED);
 		}
 
