@@ -1,6 +1,5 @@
 package app.domain.payment.service;
 
-import java.io.FileNotFoundException;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -9,7 +8,6 @@ import java.security.MessageDigest;
 import java.util.Base64;
 import java.util.UUID;
 
-import org.aspectj.weaver.ast.Or;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -178,7 +176,10 @@ public class PaymentService {
 		paymentEtcRepository.save(paymentEtc);
 
 		if (isSuccess) {
-			internalOrderClient.clearOrderCartItems(userId);
+			ApiResponse<String> clearCartItemsResponse =internalOrderClient.clearCartItems(userId);
+			if(!clearCartItemsResponse.isSuccess()){
+				throw new GeneralException(PaymentErrorStatus.CLEAR_CART_FAILED);
+			}
 			return "결제 승인이 완료되었습니다. PaymentKey: " + request.getAmount();
 		} else {
 			throw new GeneralException(PaymentErrorStatus.PAYMENT_CONFIRM_FAILED);
@@ -187,7 +188,10 @@ public class PaymentService {
 
 	@Transactional
 	public String failSave(PaymentFailRequest request) {
-		internalOrderClient.updateOrderStatus(UUID.fromString(request.getOrderId()), "FAILED");
+		ApiResponse<String> updateOrderStatusResponse= internalOrderClient.updateOrderStatus(UUID.fromString(request.getOrderId()), "FAILED");
+		if(!updateOrderStatusResponse.isSuccess()){
+			throw new GeneralException(PaymentErrorStatus.ORDER_UPDATE_STATUS_FAILED);
+		}
 		return "결제 실패 처리가 완료되었습니다.";
 	}
 
@@ -213,8 +217,15 @@ public class PaymentService {
 		String responseBody = responseWithPrefix.substring(responseWithPrefix.indexOf(":") + 1);
 
 		if (isSuccess) {
-			internalOrderClient.updateOrderStatus(request.getOrderId(), "REFUNDED");
-			internalOrderClient.addOrderHistory(request.getOrderId(), "cancel");
+			ApiResponse<String> updateOrderStatusResponse =internalOrderClient.updateOrderStatus(request.getOrderId(), "REFUNDED");
+			if(!updateOrderStatusResponse.isSuccess()){
+				throw new GeneralException(PaymentErrorStatus.ORDER_UPDATE_STATUS_FAILED);
+			}
+
+			ApiResponse<String> addOrderHistoryResponse =internalOrderClient.addOrderHistory(request.getOrderId(), "cancel");
+			if(!addOrderHistoryResponse.isSuccess()){
+				throw new GeneralException(PaymentErrorStatus.ORDER_ADD_STATUS_FAILED);
+			}
 			payment.updatePaymentStatus(PaymentStatus.CANCELLED);
 		}
 

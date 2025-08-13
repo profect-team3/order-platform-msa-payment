@@ -3,7 +3,6 @@ package app.domain.payment.client;
 import java.util.UUID;
 
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -37,20 +36,36 @@ public class InternalOrderClient {
 		return response.getBody();
 	}
 
-	public void updateOrderStatus(UUID orderId, String orderStatus) {
+	public ApiResponse<String> updateOrderStatus(UUID orderId, String orderStatus) {
 		String url = orderServiceUrl+"/internal/order/"+orderId+"/status";
-		HttpEntity<String> request = new HttpEntity<>(orderStatus);
-		restTemplate.postForObject(url, request, Void.class);
+		ResponseEntity<ApiResponse<String>> response = restTemplate.exchange(
+			url,
+			HttpMethod.POST,
+			null,
+			new ParameterizedTypeReference<ApiResponse<String>>() {}
+		);
+		return response.getBody();
 	}
 
-	public void addOrderHistory(UUID orderId, String state) {
+	public ApiResponse<String> addOrderHistory(UUID orderId, String state) {
 		String url = orderServiceUrl+"/internal/order/"+orderId+"/history";
-		HttpEntity<String> request = new HttpEntity<>(state);
-		restTemplate.postForObject(url, request, Void.class);
+		ResponseEntity<ApiResponse<String>> response = restTemplate.exchange(
+			url,
+			HttpMethod.POST,
+			null,
+			new ParameterizedTypeReference<ApiResponse<String>>() {}
+		);
+		return response.getBody();
 	}
 
-	public void clearOrderCartItems(Long userId) {
+	public ApiResponse<String> clearCartItems(Long userId) {
 		String url = orderServiceUrl+"/internal/order/cart/"+userId;
-		restTemplate.delete(url);
+		ResponseEntity<ApiResponse<String>> response = restTemplate.exchange(
+			url,
+			HttpMethod.DELETE,
+			null,
+			new ParameterizedTypeReference<ApiResponse<String>>() {}
+		);
+		return response.getBody();
 	}
 }

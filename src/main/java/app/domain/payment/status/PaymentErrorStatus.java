@@ -15,7 +15,11 @@ public enum PaymentErrorStatus implements BaseCode {
 	PAYMENT_CONFIRM_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "PAYMENT002", "결제 승인에 실패했습니다."),
 	TOSS_API_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "PAYMENT003", "토스페이먼츠 API 오류가 발생했습니다."),
 	PAYMENT_NOT_REFUNDABLE(HttpStatus.BAD_REQUEST, "PAYMENT004", "환불이 불가능한 주문입니다."),
-	PAYMENT_CANCEL_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "PAYMENT005", "결제 취소에 실패했습니다.");
+	PAYMENT_CANCEL_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "PAYMENT005", "결제 취소에 실패했습니다."),
+	ORDER_UPDATE_STATUS_FAILED(HttpStatus.INTERNAL_SERVER_ERROR,"PAYMENT006","주문 상태 변경을 실패하였습니다"),
+	ORDER_ADD_STATUS_FAILED(HttpStatus.INTERNAL_SERVER_ERROR,"PAYMENT007","주문 history 추가를 실패하였습니다"),
+	CLEAR_CART_FAILED(HttpStatus.INTERNAL_SERVER_ERROR,"PAYMENT008","장바구니 비우기를 실패하였습니다");
+
 
 	private final HttpStatus httpStatus;
 	private final String code;
