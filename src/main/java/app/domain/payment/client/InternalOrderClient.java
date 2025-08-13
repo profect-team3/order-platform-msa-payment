@@ -2,12 +2,16 @@ package app.domain.payment.client;
 
 import java.util.UUID;
 
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.beans.factory.annotation.Value;
 
 import app.domain.payment.model.dto.request.OrderInfo;
+import app.global.apiPayload.ApiResponse;
 
 @Service
 public class InternalOrderClient {
@@ -20,15 +24,17 @@ public class InternalOrderClient {
 	@Value("${order.service.url:http://localhost:8084}")
 	private String orderServiceUrl;
 
-	public boolean isOrderExists(UUID orderId) {
-		String url = orderServiceUrl+"/internal/order/"+orderId+"/exists";
-		Boolean exists = restTemplate.getForObject(url, Boolean.class);
-		return Boolean.TRUE.equals(exists);
-	}
 
-	public OrderInfo getOrderInfo(UUID orderId) {
+	public ApiResponse<OrderInfo> getOrderInfo(UUID orderId) {
 		String url = orderServiceUrl+"/internal/order/"+orderId;
-		return restTemplate.getForObject(url, OrderInfo.class);
+
+		ResponseEntity<ApiResponse<OrderInfo>> response = restTemplate.exchange(
+			url,
+			HttpMethod.GET,
+			null,
+			new ParameterizedTypeReference<ApiResponse<OrderInfo>>() {}
+		);
+		return response.getBody();
 	}
 
 	public void updateOrderStatus(UUID orderId, String orderStatus) {

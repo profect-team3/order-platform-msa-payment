@@ -1,5 +1,6 @@
 package app.domain.payment.service;
 
+import java.io.FileNotFoundException;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -8,6 +9,7 @@ import java.security.MessageDigest;
 import java.util.Base64;
 import java.util.UUID;
 
+import org.aspectj.weaver.ast.Or;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -23,6 +25,7 @@ import app.domain.payment.model.entity.enums.PaymentStatus;
 import app.domain.payment.model.repository.PaymentEtcRepository;
 import app.domain.payment.model.repository.PaymentRepository;
 import app.domain.payment.status.PaymentErrorStatus;
+import app.global.apiPayload.ApiResponse;
 import app.global.apiPayload.code.status.ErrorStatus;
 import app.global.apiPayload.exception.GeneralException;
 import jakarta.transaction.Transactional;
@@ -139,7 +142,14 @@ public class PaymentService {
 
 	@Transactional
 	public String confirmPayment(PaymentConfirmRequest request, Long userId) {
-		OrderInfo orderInfo = internalOrderClient.getOrderInfo(UUID.fromString(request.getOrderId()));
+		ApiResponse<OrderInfo> orderInfoResponse = internalOrderClient.getOrderInfo(UUID.fromString(request.getOrderId()));
+
+		if(!orderInfoResponse.isSuccess()){
+			throw new GeneralException(ErrorStatus.ORDER_NOT_FOUND);
+		}
+
+		OrderInfo orderInfo = orderInfoResponse.result();
+
 		long requestAmount = Long.parseLong(request.getAmount());
 		if (orderInfo.getTotalPrice() != requestAmount) {
 			throw new GeneralException(PaymentErrorStatus.PAYMENT_AMOUNT_MISMATCH);
@@ -183,8 +193,13 @@ public class PaymentService {
 
 	@Transactional
 	public String cancelPayment(CancelPaymentRequest request, Long userId) {
-		OrderInfo orderInfo = internalOrderClient.getOrderInfo(request.getOrderId());
+		ApiResponse<OrderInfo> orderInfoResponse = internalOrderClient.getOrderInfo(request.getOrderId());
 
+		if(!orderInfoResponse.isSuccess()){
+			throw new GeneralException(ErrorStatus.ORDER_NOT_FOUND);
+		}
+
+		OrderInfo orderInfo = orderInfoResponse.result();
 		if (!orderInfo.getIsRefundable()) {
 			throw new GeneralException(PaymentErrorStatus.PAYMENT_NOT_REFUNDABLE);
 		}
