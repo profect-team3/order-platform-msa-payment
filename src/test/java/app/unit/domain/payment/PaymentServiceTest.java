@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -51,6 +52,7 @@ class PaymentServiceTest {
 	private PaymentService paymentService;
 
 	private UUID orderId;
+	private UUID storeId;
 	private Long userId;
 	private PaymentConfirmRequest confirmRequest;
 	private PaymentFailRequest failRequest;
@@ -61,6 +63,8 @@ class PaymentServiceTest {
 	@BeforeEach
 	void setUp() {
 		orderId = UUID.randomUUID();
+		storeId= UUID.randomUUID();
+
 		userId = 1L;
 
 		ReflectionTestUtils.setField(paymentService, "tossSecretKey", "test_secret_key");
@@ -76,7 +80,7 @@ class PaymentServiceTest {
 
 		cancelRequest = new CancelPaymentRequest(orderId, "구매자가 취소를 원함");
 
-		orderInfo = new OrderInfo(10000L,"CREDIT_CARD",true);
+		orderInfo = new OrderInfo(orderId,storeId,userId,10000L,"PENDING", LocalDateTime.now(),"CREDIT_CARD",true);
 
 		payment = Payment.builder()
 			.paymentId(UUID.randomUUID())
@@ -295,7 +299,7 @@ class PaymentServiceTest {
 	@DisplayName("결제 취소 실패 - 환불 불가능")
 	void cancelPayment_NotRefundable() {
 		// Given
-		OrderInfo nonRefundableOrderInfo = new OrderInfo(10000L,"CREDIT_CARD",false);
+		OrderInfo nonRefundableOrderInfo = new OrderInfo(orderId,storeId,userId,10000L,"PENDING", LocalDateTime.now(),"CREDIT_CARD",false);
 		when(internalOrderClient.getOrderInfo(orderId)).thenReturn(new ApiResponse<>(true, "200", "성공", nonRefundableOrderInfo));
 
 		// When & Then
