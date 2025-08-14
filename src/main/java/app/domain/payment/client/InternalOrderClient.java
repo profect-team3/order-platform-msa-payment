@@ -5,7 +5,9 @@ import java.util.UUID;
 
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
@@ -42,7 +44,9 @@ public class InternalOrderClient {
 	public ApiResponse<String> updateOrderStatus(UUID orderId, String orderStatus) {
 		String url = orderServiceUrl+"/internal/order/"+orderId+"/status";
 
-		HttpEntity<String> requestEntity = new HttpEntity<>(orderStatus);
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.TEXT_PLAIN);
+		HttpEntity<String> requestEntity = new HttpEntity<>(orderStatus,headers);
 		ResponseEntity<ApiResponse<String>> response = restTemplate.exchange(
 			url,
 			HttpMethod.POST,
@@ -54,10 +58,13 @@ public class InternalOrderClient {
 
 	public ApiResponse<String> addOrderHistory(UUID orderId, String state) {
 		String url = orderServiceUrl+"/internal/order/"+orderId+"/history";
+
+		HttpHeaders headers = new HttpHeaders();
+		HttpEntity<String> requestEntity = new HttpEntity<>(state);
 		ResponseEntity<ApiResponse<String>> response = restTemplate.exchange(
 			url,
 			HttpMethod.POST,
-			null,
+			requestEntity,
 			new ParameterizedTypeReference<ApiResponse<String>>() {}
 		);
 		return response.getBody();
