@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -31,6 +32,7 @@ import app.domain.payment.model.entity.enums.PaymentStatus;
 import app.domain.payment.model.repository.PaymentEtcRepository;
 import app.domain.payment.model.repository.PaymentRepository;
 import app.domain.payment.status.PaymentErrorStatus;
+import app.global.apiPayload.ApiResponse;
 import app.global.apiPayload.code.status.ErrorStatus;
 import app.global.apiPayload.exception.GeneralException;
 
@@ -50,6 +52,7 @@ class PaymentServiceTest {
 	private PaymentService paymentService;
 
 	private UUID orderId;
+	private UUID storeId;
 	private Long userId;
 	private PaymentConfirmRequest confirmRequest;
 	private PaymentFailRequest failRequest;
@@ -60,6 +63,8 @@ class PaymentServiceTest {
 	@BeforeEach
 	void setUp() {
 		orderId = UUID.randomUUID();
+		storeId= UUID.randomUUID();
+
 		userId = 1L;
 
 		ReflectionTestUtils.setField(paymentService, "tossSecretKey", "test_secret_key");
@@ -75,11 +80,7 @@ class PaymentServiceTest {
 
 		cancelRequest = new CancelPaymentRequest(orderId, "구매자가 취소를 원함");
 
-		orderInfo = OrderInfo.builder()
-			.totalPrice(10000L)
-			.paymentMethod(String.valueOf(PaymentMethod.CREDIT_CARD))
-			.isRefundable(true)
-			.build();
+		orderInfo = new OrderInfo(orderId,storeId,userId,10000L,"PENDING", LocalDateTime.now(),"CREDIT_CARD",true);
 
 		payment = Payment.builder()
 			.paymentId(UUID.randomUUID())
@@ -95,9 +96,10 @@ class PaymentServiceTest {
 	@DisplayName("결제 승인 성공")
 	void confirmPayment_Success() {
 		// Given
-		when(internalOrderClient.getOrderInfo(orderId)).thenReturn(orderInfo);
+		when(internalOrderClient.getOrderInfo(orderId)).thenReturn(new ApiResponse<>(true, "200", "성공", orderInfo));
 		when(paymentRepository.save(any(Payment.class))).thenReturn(payment);
 		when(paymentEtcRepository.save(any(PaymentEtc.class))).thenReturn(mock(PaymentEtc.class));
+		when(internalOrderClient.clearCartItems(userId)).thenReturn(new ApiResponse<>(true, "200", "성공", "장바구니 비우기 성공"));
 		doReturn("success:{\"status\":\"DONE\"}").when(paymentService).callTossConfirmApi(any(PaymentConfirmRequest.class), any(Long.class));
 
 		// When
@@ -108,14 +110,14 @@ class PaymentServiceTest {
 		verify(internalOrderClient).getOrderInfo(orderId);
 		verify(paymentRepository).save(any(Payment.class));
 		verify(paymentEtcRepository).save(any(PaymentEtc.class));
-		verify(internalOrderClient).clearOrderCartItems(userId);
+		verify(internalOrderClient).clearCartItems(userId);
 	}
 
 	@Test
 	@DisplayName("결제 승인 실패 - API 호출 실패")
 	void confirmPayment_ApiCallFailed() {
 		// Given
-		when(internalOrderClient.getOrderInfo(orderId)).thenReturn(orderInfo);
+		when(internalOrderClient.getOrderInfo(orderId)).thenReturn(new ApiResponse<>(true, "200", "성공", orderInfo));
 		when(paymentRepository.save(any(Payment.class))).thenReturn(payment);
 		when(paymentEtcRepository.save(any(PaymentEtc.class))).thenReturn(mock(PaymentEtc.class));
 		doReturn("fail:{\"code\":\"INVALID_REQUEST\",\"message\":\"Invalid request\"}").when(paymentService).callTossConfirmApi(any(PaymentConfirmRequest.class), any(Long.class));
@@ -131,7 +133,7 @@ class PaymentServiceTest {
 
 		verify(paymentRepository).save(any(Payment.class));
 		verify(paymentEtcRepository).save(any(PaymentEtc.class));
-		verify(internalOrderClient, never()).clearOrderCartItems(userId);
+		verify(internalOrderClient, never()).clearCartItems(userId);
 	}
 
 	@Test
@@ -161,7 +163,7 @@ class PaymentServiceTest {
 			orderId.toString(),
 			"20000"
 		);
-		when(internalOrderClient.getOrderInfo(orderId)).thenReturn(orderInfo);
+		when(internalOrderClient.getOrderInfo(orderId)).thenReturn(new ApiResponse<>(true, "200", "성공", orderInfo));
 
 		// When & Then
 		assertThatThrownBy(() -> paymentService.confirmPayment(wrongAmountRequest, userId))
@@ -180,7 +182,7 @@ class PaymentServiceTest {
 	@DisplayName("결제 실패 처리 성공")
 	void failSave_Success() {
 		// Given
-		doNothing().when(internalOrderClient).updateOrderStatus(orderId, "FAILED");
+		when(internalOrderClient.updateOrderStatus(orderId,"FAILED")).thenReturn(new ApiResponse<>(true, "200", "성공", "주문 상태 변경에 성공"));
 
 		// When
 		String result = paymentService.failSave(failRequest);
@@ -212,13 +214,14 @@ class PaymentServiceTest {
 	@DisplayName("결제 취소 성공")
 	void cancelPayment_Success() {
 		// Given
-		when(internalOrderClient.getOrderInfo(orderId)).thenReturn(orderInfo);
+		when(internalOrderClient.getOrderInfo(orderId)).thenReturn(new ApiResponse<>(true, "200", "성공", orderInfo));
 		when(paymentRepository.findByOrdersId(orderId)).thenReturn(Optional.of(payment));
 		when(paymentEtcRepository.save(any(PaymentEtc.class))).thenReturn(mock(PaymentEtc.class));
 		doReturn("success:{\"status\":\"CANCELED\"}").when(paymentService)
 			.callTossCancelApi(anyString(), anyString(), any(Long.class), any(UUID.class));
-		doNothing().when(internalOrderClient).updateOrderStatus(orderId, "REFUNDED");
-		doNothing().when(internalOrderClient).addOrderHistory(orderId, "cancel");
+		when(internalOrderClient.updateOrderStatus(orderId,"REFUNDED")).thenReturn(new ApiResponse<>(true, "200", "성공", "주문 상태 변경에 성공"));
+		when(internalOrderClient.addOrderHistory(orderId,"cancel")).thenReturn(new ApiResponse<>(true, "200", "성공", "주문 historty 추가에 성공"));
+
 
 		// When
 		String result = paymentService.cancelPayment(cancelRequest, userId);
@@ -236,7 +239,7 @@ class PaymentServiceTest {
 	@DisplayName("결제 취소 실패 - API 호출 실패")
 	void cancelPayment_ApiCallFailed() {
 		// Given
-		when(internalOrderClient.getOrderInfo(orderId)).thenReturn(orderInfo);
+		when(internalOrderClient.getOrderInfo(orderId)).thenReturn(new ApiResponse<>(true, "200", "성공", orderInfo));
 		when(paymentRepository.findByOrdersId(orderId)).thenReturn(Optional.of(payment));
 		when(paymentEtcRepository.save(any(PaymentEtc.class))).thenReturn(mock(PaymentEtc.class));
 		doReturn("fail:{\"code\":\"CANCEL_FAILED\",\"message\":\"Cancel failed\"}").when(paymentService)
@@ -276,7 +279,7 @@ class PaymentServiceTest {
 	@DisplayName("결제 취소 실패 - 결제 정보를 찾을 수 없음")
 	void cancelPayment_PaymentNotFound() {
 		// Given
-		when(internalOrderClient.getOrderInfo(orderId)).thenReturn(orderInfo);
+		when(internalOrderClient.getOrderInfo(orderId)).thenReturn(new ApiResponse<>(true, "200", "성공", orderInfo));
 		when(paymentRepository.findByOrdersId(orderId)).thenReturn(Optional.empty());
 
 		// When & Then
@@ -296,12 +299,8 @@ class PaymentServiceTest {
 	@DisplayName("결제 취소 실패 - 환불 불가능")
 	void cancelPayment_NotRefundable() {
 		// Given
-		OrderInfo nonRefundableOrderInfo = OrderInfo.builder()
-			.totalPrice(10000L)
-			.paymentMethod("CREDIT_CARD")
-			.isRefundable(false)
-			.build();
-		when(internalOrderClient.getOrderInfo(orderId)).thenReturn(nonRefundableOrderInfo);
+		OrderInfo nonRefundableOrderInfo = new OrderInfo(orderId,storeId,userId,10000L,"PENDING", LocalDateTime.now(),"CREDIT_CARD",false);
+		when(internalOrderClient.getOrderInfo(orderId)).thenReturn(new ApiResponse<>(true, "200", "성공", nonRefundableOrderInfo));
 
 		// When & Then
 		assertThatThrownBy(() -> paymentService.cancelPayment(cancelRequest, userId))

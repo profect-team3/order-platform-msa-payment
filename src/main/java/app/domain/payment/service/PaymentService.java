@@ -23,6 +23,7 @@ import app.domain.payment.model.entity.enums.PaymentStatus;
 import app.domain.payment.model.repository.PaymentEtcRepository;
 import app.domain.payment.model.repository.PaymentRepository;
 import app.domain.payment.status.PaymentErrorStatus;
+import app.global.apiPayload.ApiResponse;
 import app.global.apiPayload.code.status.ErrorStatus;
 import app.global.apiPayload.exception.GeneralException;
 import jakarta.transaction.Transactional;
@@ -139,7 +140,14 @@ public class PaymentService {
 
 	@Transactional
 	public String confirmPayment(PaymentConfirmRequest request, Long userId) {
-		OrderInfo orderInfo = internalOrderClient.getOrderInfo(UUID.fromString(request.getOrderId()));
+		ApiResponse<OrderInfo> orderInfoResponse = internalOrderClient.getOrderInfo(UUID.fromString(request.getOrderId()));
+
+		if(!orderInfoResponse.isSuccess()){
+			throw new GeneralException(ErrorStatus.ORDER_NOT_FOUND);
+		}
+
+		OrderInfo orderInfo = orderInfoResponse.result();
+
 		long requestAmount = Long.parseLong(request.getAmount());
 		if (orderInfo.getTotalPrice() != requestAmount) {
 			throw new GeneralException(PaymentErrorStatus.PAYMENT_AMOUNT_MISMATCH);
@@ -168,7 +176,10 @@ public class PaymentService {
 		paymentEtcRepository.save(paymentEtc);
 
 		if (isSuccess) {
-			internalOrderClient.clearOrderCartItems(userId);
+			ApiResponse<String> clearCartItemsResponse =internalOrderClient.clearCartItems(userId);
+			if(!clearCartItemsResponse.isSuccess()){
+				throw new GeneralException(PaymentErrorStatus.CLEAR_CART_FAILED);
+			}
 			return "결제 승인이 완료되었습니다. PaymentKey: " + request.getAmount();
 		} else {
 			throw new GeneralException(PaymentErrorStatus.PAYMENT_CONFIRM_FAILED);
@@ -177,14 +188,22 @@ public class PaymentService {
 
 	@Transactional
 	public String failSave(PaymentFailRequest request) {
-		internalOrderClient.updateOrderStatus(UUID.fromString(request.getOrderId()), "FAILED");
+		ApiResponse<String> updateOrderStatusResponse= internalOrderClient.updateOrderStatus(UUID.fromString(request.getOrderId()), "FAILED");
+		if(!updateOrderStatusResponse.isSuccess()){
+			throw new GeneralException(PaymentErrorStatus.ORDER_UPDATE_STATUS_FAILED);
+		}
 		return "결제 실패 처리가 완료되었습니다.";
 	}
 
 	@Transactional
 	public String cancelPayment(CancelPaymentRequest request, Long userId) {
-		OrderInfo orderInfo = internalOrderClient.getOrderInfo(request.getOrderId());
+		ApiResponse<OrderInfo> orderInfoResponse = internalOrderClient.getOrderInfo(request.getOrderId());
 
+		if(!orderInfoResponse.isSuccess()){
+			throw new GeneralException(ErrorStatus.ORDER_NOT_FOUND);
+		}
+
+		OrderInfo orderInfo = orderInfoResponse.result();
 		if (!orderInfo.getIsRefundable()) {
 			throw new GeneralException(PaymentErrorStatus.PAYMENT_NOT_REFUNDABLE);
 		}
@@ -198,8 +217,15 @@ public class PaymentService {
 		String responseBody = responseWithPrefix.substring(responseWithPrefix.indexOf(":") + 1);
 
 		if (isSuccess) {
-			internalOrderClient.updateOrderStatus(request.getOrderId(), "REFUNDED");
-			internalOrderClient.addOrderHistory(request.getOrderId(), "cancel");
+			ApiResponse<String> updateOrderStatusResponse =internalOrderClient.updateOrderStatus(request.getOrderId(), "REFUNDED");
+			if(!updateOrderStatusResponse.isSuccess()){
+				throw new GeneralException(PaymentErrorStatus.ORDER_UPDATE_STATUS_FAILED);
+			}
+
+			ApiResponse<String> addOrderHistoryResponse =internalOrderClient.addOrderHistory(request.getOrderId(), "cancel");
+			if(!addOrderHistoryResponse.isSuccess()){
+				throw new GeneralException(PaymentErrorStatus.ORDER_ADD_STATUS_FAILED);
+			}
 			payment.updatePaymentStatus(PaymentStatus.CANCELLED);
 		}
 
