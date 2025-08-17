@@ -11,6 +11,8 @@ import java.util.UUID;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 
 import app.domain.payment.client.InternalOrderClient;
 import app.domain.payment.model.dto.request.CancelPaymentRequest;
@@ -28,9 +30,11 @@ import app.global.apiPayload.code.status.ErrorStatus;
 import app.global.apiPayload.exception.GeneralException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PaymentService {
 
 	@Value("${TOSS_SECRET_KEY}")
@@ -140,9 +144,11 @@ public class PaymentService {
 
 	@Transactional
 	public String confirmPayment(PaymentConfirmRequest request, Long userId) {
-		ApiResponse<OrderInfo> orderInfoResponse = internalOrderClient.getOrderInfo(UUID.fromString(request.getOrderId()));
-
-		if(!orderInfoResponse.isSuccess()){
+		ApiResponse<OrderInfo> orderInfoResponse;
+		try {
+			orderInfoResponse = internalOrderClient.getOrderInfo(UUID.fromString(request.getOrderId()));
+		} catch (HttpServerErrorException | HttpClientErrorException e){
+			log.error("Order Service Error: {}", e.getResponseBodyAsString());
 			throw new GeneralException(ErrorStatus.ORDER_NOT_FOUND);
 		}
 
@@ -176,10 +182,14 @@ public class PaymentService {
 		paymentEtcRepository.save(paymentEtc);
 
 		if (isSuccess) {
-			ApiResponse<String> clearCartItemsResponse =internalOrderClient.clearCartItems(userId);
-			if(!clearCartItemsResponse.isSuccess()){
+			ApiResponse<String> clearCartItemsResponse;
+			try{
+				clearCartItemsResponse =internalOrderClient.clearCartItems(userId);
+			} catch (HttpClientErrorException | HttpServerErrorException e){
+				log.error("Order Service Error: {}",e.getResponseBodyAsString());
 				throw new GeneralException(PaymentErrorStatus.CLEAR_CART_FAILED);
 			}
+
 			return "결제 승인이 완료되었습니다. PaymentKey: " + request.getAmount();
 		} else {
 			throw new GeneralException(PaymentErrorStatus.PAYMENT_CONFIRM_FAILED);
@@ -188,8 +198,11 @@ public class PaymentService {
 
 	@Transactional
 	public String failSave(PaymentFailRequest request) {
-		ApiResponse<String> updateOrderStatusResponse= internalOrderClient.updateOrderStatus(UUID.fromString(request.getOrderId()), "FAILED");
-		if(!updateOrderStatusResponse.isSuccess()){
+		ApiResponse<String> updateOrderStatusResponse;
+		try{
+			updateOrderStatusResponse=internalOrderClient.updateOrderStatus(UUID.fromString(request.getOrderId()), "FAILED");
+		}catch (HttpServerErrorException | HttpClientErrorException e){
+			log.error("Order Service Error: {}",e.getResponseBodyAsString());
 			throw new GeneralException(PaymentErrorStatus.ORDER_UPDATE_STATUS_FAILED);
 		}
 		return "결제 실패 처리가 완료되었습니다.";
@@ -197,9 +210,11 @@ public class PaymentService {
 
 	@Transactional
 	public String cancelPayment(CancelPaymentRequest request, Long userId) {
-		ApiResponse<OrderInfo> orderInfoResponse = internalOrderClient.getOrderInfo(request.getOrderId());
-
-		if(!orderInfoResponse.isSuccess()){
+		ApiResponse<OrderInfo> orderInfoResponse;
+		try {
+			orderInfoResponse = internalOrderClient.getOrderInfo(request.getOrderId());
+		} catch (HttpServerErrorException | HttpClientErrorException e){
+			log.error("Order Service Error: {}", e.getResponseBodyAsString());
 			throw new GeneralException(ErrorStatus.ORDER_NOT_FOUND);
 		}
 
@@ -217,13 +232,19 @@ public class PaymentService {
 		String responseBody = responseWithPrefix.substring(responseWithPrefix.indexOf(":") + 1);
 
 		if (isSuccess) {
-			ApiResponse<String> updateOrderStatusResponse =internalOrderClient.updateOrderStatus(request.getOrderId(), "REFUNDED");
-			if(!updateOrderStatusResponse.isSuccess()){
+			ApiResponse<String> updateOrderStatusResponse;
+			try{
+				updateOrderStatusResponse=internalOrderClient.updateOrderStatus(request.getOrderId(), "REFUNDED");
+			} catch (HttpServerErrorException | HttpClientErrorException e){
+				log.error("Order Service Error: {}", e.getResponseBodyAsString());
 				throw new GeneralException(PaymentErrorStatus.ORDER_UPDATE_STATUS_FAILED);
 			}
 
-			ApiResponse<String> addOrderHistoryResponse =internalOrderClient.addOrderHistory(request.getOrderId(), "cancel");
-			if(!addOrderHistoryResponse.isSuccess()){
+			ApiResponse<String> addOrderHistoryResponse;
+			try {
+				addOrderHistoryResponse =internalOrderClient.addOrderHistory(request.getOrderId(), "cancel");
+			} catch (HttpServerErrorException | HttpClientErrorException e){
+				log.error("Order Service Error: {}", e.getResponseBodyAsString());
 				throw new GeneralException(PaymentErrorStatus.ORDER_ADD_STATUS_FAILED);
 			}
 			payment.updatePaymentStatus(PaymentStatus.CANCELLED);
