@@ -1,5 +1,6 @@
 package app.domain.payment.controller;
 
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,8 +28,8 @@ public class PaymentController {
 
 	@Operation(summary = "결제 승인 API", description = "토스페이먼츠를 통해 결제를 승인합니다.")
 	@PostMapping("/confirm")
-	public ApiResponse<String> confirm(@Valid @RequestBody PaymentConfirmRequest request, @RequestParam Long userId) {
-		String result = paymentService.confirmPayment(request, userId);
+	public ApiResponse<String> confirm(@Valid @RequestBody PaymentConfirmRequest request, Authentication authentication) {
+		String result = paymentService.confirmPayment(request, authentication);
 		return ApiResponse.onSuccess(PaymentSuccessStatus.PAYMENT_CONFIRMED, result);
 	}
 
@@ -41,8 +42,8 @@ public class PaymentController {
 
 	@Operation(summary = "결제 취소 처리 API", description = "토스페이먼츠를 통해 결제를 취소합니다.")
 	@PostMapping("/cancel")
-	public ApiResponse<String> cancelPayment(@Valid @RequestBody CancelPaymentRequest request, @RequestParam Long userId) {
-		String result = paymentService.cancelPayment(request, userId);
+	public ApiResponse<String> cancelPayment(@Valid @RequestBody CancelPaymentRequest request, Authentication authentication) {
+		String result = paymentService.cancelPayment(request, authentication);
 		return ApiResponse.onSuccess(PaymentSuccessStatus.PAYMENT_CANCELLED, result);
 	}
 }

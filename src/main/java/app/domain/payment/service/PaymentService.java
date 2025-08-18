@@ -10,10 +10,12 @@ import java.util.UUID;
 
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 
+import app.commonSecurity.TokenPrincipalParser;
 import app.domain.payment.client.InternalOrderClient;
 import app.domain.payment.model.dto.request.CancelPaymentRequest;
 import app.domain.payment.model.dto.request.OrderInfo;
@@ -45,6 +47,7 @@ public class PaymentService {
 	private final PaymentRepository paymentRepository;
 	private final PaymentEtcRepository paymentEtcRepository;
 	private final InternalOrderClient internalOrderClient;
+	private final TokenPrincipalParser tokenPrincipalParser;
 
 	private String generateIdempotencyKey(Long userId, String orderId) {
 		try {
@@ -143,7 +146,9 @@ public class PaymentService {
 	}
 
 	@Transactional
-	public String confirmPayment(PaymentConfirmRequest request, Long userId) {
+	public String confirmPayment(PaymentConfirmRequest request, Authentication authentication) {
+		String userIdStr = tokenPrincipalParser.getUserId(authentication);
+		Long userId = Long.parseLong(userIdStr);
 		ApiResponse<OrderInfo> orderInfoResponse;
 		try {
 			orderInfoResponse = internalOrderClient.getOrderInfo(UUID.fromString(request.getOrderId()));
@@ -184,7 +189,7 @@ public class PaymentService {
 		if (isSuccess) {
 			ApiResponse<String> clearCartItemsResponse;
 			try{
-				clearCartItemsResponse =internalOrderClient.clearCartItems(userId);
+				clearCartItemsResponse =internalOrderClient.clearCartItems();
 			} catch (HttpClientErrorException | HttpServerErrorException e){
 				log.error("Order Service Error: {}",e.getResponseBodyAsString());
 				throw new GeneralException(PaymentErrorStatus.CLEAR_CART_FAILED);
@@ -209,7 +214,9 @@ public class PaymentService {
 	}
 
 	@Transactional
-	public String cancelPayment(CancelPaymentRequest request, Long userId) {
+	public String cancelPayment(CancelPaymentRequest request, Authentication authentication) {
+		String userIdStr = tokenPrincipalParser.getUserId(authentication);
+		Long userId = Long.parseLong(userIdStr);
 		ApiResponse<OrderInfo> orderInfoResponse;
 		try {
 			orderInfoResponse = internalOrderClient.getOrderInfo(request.getOrderId());

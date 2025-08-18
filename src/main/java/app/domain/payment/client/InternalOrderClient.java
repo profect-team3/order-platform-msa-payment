@@ -70,8 +70,8 @@ public class InternalOrderClient {
 		return response.getBody();
 	}
 
-	public ApiResponse<String> clearCartItems(Long userId) {
-		String url = orderServiceUrl+"/internal/order/cart/"+userId;
+	public ApiResponse<String> clearCartItems() {
+		String url = orderServiceUrl+"/internal/order/cart";
 		ResponseEntity<ApiResponse<String>> response = restTemplate.exchange(
 			url,
 			HttpMethod.DELETE,
