@@ -1,4 +1,4 @@
-package app.unit.domain.payment;
+package app.service;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -20,19 +20,18 @@ import org.springframework.security.core.Authentication;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import app.commonSecurity.TokenPrincipalParser;
-import app.domain.payment.service.PaymentService;
 import app.domain.payment.client.InternalOrderClient;
-import app.domain.payment.model.dto.request.OrderInfo;
-import app.domain.payment.model.entity.enums.PaymentMethod;
-
 import app.domain.payment.model.dto.request.CancelPaymentRequest;
+import app.domain.payment.model.dto.request.OrderInfo;
 import app.domain.payment.model.dto.request.PaymentConfirmRequest;
 import app.domain.payment.model.dto.request.PaymentFailRequest;
 import app.domain.payment.model.entity.Payment;
 import app.domain.payment.model.entity.PaymentEtc;
+import app.domain.payment.model.entity.enums.PaymentMethod;
 import app.domain.payment.model.entity.enums.PaymentStatus;
 import app.domain.payment.model.repository.PaymentEtcRepository;
 import app.domain.payment.model.repository.PaymentRepository;
+import app.domain.payment.service.PaymentService;
 import app.domain.payment.status.PaymentErrorStatus;
 import app.global.apiPayload.ApiResponse;
 import app.global.apiPayload.code.status.ErrorStatus;
