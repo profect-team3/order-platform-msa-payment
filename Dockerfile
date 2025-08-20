@@ -2,12 +2,10 @@
 FROM gradle:8.8-jdk17 AS builder
 WORKDIR /workspace
 
-COPY gradlew gradlew.bat /workspace/
-COPY gradle /workspace/gradle
-COPY settings.gradle* build.gradle* gradle.properties* /workspace/
-COPY . /workspace/
+COPY gradlew gradlew.bat settings.gradle build.gradle ./
+COPY gradle ./gradle
 
-RUN chmod +x ./gradlew
+COPY order-platform-msa-payment ./order-platform-msa-payment
 
 RUN ./gradlew :order-platform-msa-payment:build -x test
 
