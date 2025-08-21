@@ -1,8 +1,7 @@
-# Stage 1: Build
 FROM gradle:8.8-jdk17 AS builder
 WORKDIR /workspace
 
-COPY gradlew gradlew.bat settings.gradle build.gradle ./
+COPY gradlew gradlew.bat settings.gradle build.cloud.gradle ./
 COPY gradle ./gradle
 
 COPY order-platform-msa-payment ./order-platform-msa-payment
