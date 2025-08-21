@@ -32,10 +32,12 @@ spring:
         jwt:
           jwk-set-uri: ${OAUTH_JWKS_URI:http://localhost:8083/oauth/jwks}
 
-
-
 jwt:
   audience: ${AUTH_INTERNAL_AUDIENCE:internal-services}
 
 server:
   port: 8085
+
+toss:
+  clientKey: ${TOSS_CLIENT_KEY}
+  secretKey: ${TOSS_SECRET_KEY}
