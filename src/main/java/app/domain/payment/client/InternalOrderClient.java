@@ -1,6 +1,5 @@
 package app.domain.payment.client;
 
-import java.util.List;
 import java.util.UUID;
 
 import org.springframework.core.ParameterizedTypeReference;
@@ -10,7 +9,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.beans.factory.annotation.Value;
 
