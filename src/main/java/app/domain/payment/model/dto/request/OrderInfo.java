@@ -3,7 +3,6 @@ package app.domain.payment.model.dto.request;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import org.aspectj.weaver.ast.Or;
 
 import app.domain.payment.model.entity.enums.PaymentMethod;
 import lombok.Getter;
