@@ -195,7 +195,7 @@ public class PaymentService {
 				throw new GeneralException(PaymentErrorStatus.CLEAR_CART_FAILED);
 			}
 
-			return "결제 승인이 완료되었습니다. PaymentKey: " + request.getAmount();
+			return "결제 승인이 완료되었습니다.";
 		} else {
 			throw new GeneralException(PaymentErrorStatus.PAYMENT_CONFIRM_FAILED);
 		}
