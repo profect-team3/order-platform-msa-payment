@@ -21,7 +21,7 @@ import lombok.RequiredArgsConstructor;
 @Tag(name = "payment", description = "결제 관련 API")
 @RestController
 @RequiredArgsConstructor
-@RequestMapping()
+@RequestMapping("/payment")
 @PreAuthorize("hasRole('CUSTOMER')")
 public class PaymentController {
 
