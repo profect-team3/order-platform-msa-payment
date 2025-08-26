@@ -2,7 +2,7 @@ name: ECR Push - payment
 
 on:
   push:
-    branches: ["dev"]
+    branches: ["dev", "refactor/seperate-ci"]
 
 jobs:
   build-and-push:
