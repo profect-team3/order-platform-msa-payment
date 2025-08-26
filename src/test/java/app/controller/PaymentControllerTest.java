@@ -67,7 +67,7 @@ class PaymentControllerTest {
 		when(paymentService.confirmPayment(any(PaymentConfirmRequest.class),any()))
 			.thenReturn(resultMessage);
 
-		mockMvc.perform(post("/confirm")
+		mockMvc.perform(post("/payment/confirm")
 				.with(csrf())
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(request)))
@@ -91,7 +91,7 @@ class PaymentControllerTest {
 		when(paymentService.confirmPayment(any(PaymentConfirmRequest.class),any()))
 			.thenThrow(new GeneralException(PaymentErrorStatus.PAYMENT_CONFIRM_FAILED));
 
-		mockMvc.perform(post("/confirm")
+		mockMvc.perform(post("/payment/confirm")
 				.with(csrf())
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(request)))
@@ -113,7 +113,7 @@ class PaymentControllerTest {
 		when(paymentService.failSave(any(PaymentFailRequest.class)))
 			.thenReturn(resultMessage);
 
-		mockMvc.perform(post("/failsave")
+		mockMvc.perform(post("/payment/failsave")
 				.with(csrf())
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(request)))
@@ -137,7 +137,7 @@ class PaymentControllerTest {
 		when(paymentService.cancelPayment(any(CancelPaymentRequest.class),any()))
 			.thenReturn(resultMessage);
 
-		mockMvc.perform(post("/cancel")
+		mockMvc.perform(post("/payment/cancel")
 				.with(csrf())
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(request)))
@@ -161,7 +161,7 @@ class PaymentControllerTest {
 		when(paymentService.failSave(any(PaymentFailRequest.class)))
 			.thenThrow(new GeneralException(ErrorStatus._INTERNAL_SERVER_ERROR));
 
-		mockMvc.perform(post("/failsave")
+		mockMvc.perform(post("/payment/failsave")
 				.with(csrf())
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(request)))
@@ -181,7 +181,7 @@ class PaymentControllerTest {
 		when(paymentService.cancelPayment(any(CancelPaymentRequest.class),any()))
 			.thenThrow(new GeneralException(ErrorStatus._INTERNAL_SERVER_ERROR));
 
-		mockMvc.perform(post("/cancel")
+		mockMvc.perform(post("/payment/cancel")
 				.with(csrf())
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(request)))
@@ -202,7 +202,7 @@ class PaymentControllerTest {
 		when(paymentService.confirmPayment(any(PaymentConfirmRequest.class),any()))
 			.thenThrow(new GeneralException(ErrorStatus.ORDER_NOT_FOUND));
 
-		mockMvc.perform(post("/confirm")
+		mockMvc.perform(post("/payment/confirm")
 				.with(csrf())
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(request)))
@@ -223,7 +223,7 @@ class PaymentControllerTest {
 		when(paymentService.confirmPayment(any(PaymentConfirmRequest.class),any()))
 			.thenThrow(new GeneralException(PaymentErrorStatus.PAYMENT_AMOUNT_MISMATCH));
 
-		mockMvc.perform(post("/confirm")
+		mockMvc.perform(post("/payment/confirm")
 				.with(csrf())
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(request)))
@@ -244,7 +244,7 @@ class PaymentControllerTest {
 		when(paymentService.failSave(any(PaymentFailRequest.class)))
 			.thenThrow(new GeneralException(ErrorStatus.ORDER_NOT_FOUND));
 
-		mockMvc.perform(post("/failsave")
+		mockMvc.perform(post("/payment/failsave")
 				.with(csrf())
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(request)))
@@ -264,7 +264,7 @@ class PaymentControllerTest {
 		when(paymentService.cancelPayment(any(CancelPaymentRequest.class),any()))
 			.thenThrow(new GeneralException(ErrorStatus.ORDER_NOT_FOUND));
 
-		mockMvc.perform(post("/cancel")
+		mockMvc.perform(post("/payment/cancel")
 				.with(csrf())
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(request)))
@@ -284,7 +284,7 @@ class PaymentControllerTest {
 		when(paymentService.cancelPayment(any(CancelPaymentRequest.class),any()))
 			.thenThrow(new GeneralException(PaymentErrorStatus.PAYMENT_NOT_REFUNDABLE));
 
-		mockMvc.perform(post("/cancel")
+		mockMvc.perform(post("/payment/cancel")
 				.with(csrf())
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(request)))
@@ -304,7 +304,7 @@ class PaymentControllerTest {
 		when(paymentService.cancelPayment(any(CancelPaymentRequest.class),any()))
 			.thenThrow(new GeneralException(ErrorStatus.PAYMENT_NOT_FOUND));
 
-		mockMvc.perform(post("/cancel")
+		mockMvc.perform(post("/payment/cancel")
 				.with(csrf())
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(request)))
@@ -325,7 +325,7 @@ class PaymentControllerTest {
 		when(paymentService.confirmPayment(any(PaymentConfirmRequest.class),any()))
 			.thenThrow(new GeneralException(PaymentErrorStatus.TOSS_API_ERROR));
 
-		mockMvc.perform(post("/confirm")
+		mockMvc.perform(post("/payment/confirm")
 				.with(csrf())
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(request)))
@@ -345,7 +345,7 @@ class PaymentControllerTest {
 		when(paymentService.cancelPayment(any(CancelPaymentRequest.class),any()))
 			.thenThrow(new GeneralException(PaymentErrorStatus.TOSS_API_ERROR));
 
-		mockMvc.perform(post("/cancel")
+		mockMvc.perform(post("/payment/cancel")
 				.with(csrf())
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(request)))
@@ -359,7 +359,7 @@ class PaymentControllerTest {
 	void confirmPayment_MissingPaymentKey() throws Exception {
 		String jsonWithoutPaymentKey = "{\"orderId\": \"" + UUID.randomUUID() + "\", \"amount\": \"10000\"}";
 
-		mockMvc.perform(post("/confirm")
+		mockMvc.perform(post("/payment/confirm")
 				.with(csrf())
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(jsonWithoutPaymentKey))
@@ -376,7 +376,7 @@ class PaymentControllerTest {
 	void confirmPayment_MissingOrderId() throws Exception {
 		String jsonWithoutOrderId = "{\"paymentKey\": \"test_key\", \"amount\": \"10000\"}";
 
-		mockMvc.perform(post("/confirm")
+		mockMvc.perform(post("/payment/confirm")
 				.with(csrf())
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(jsonWithoutOrderId))
@@ -393,7 +393,7 @@ class PaymentControllerTest {
 	void confirmPayment_MissingAmount() throws Exception {
 		String jsonWithoutAmount = "{\"paymentKey\": \"test_key\", \"orderId\": \"" + UUID.randomUUID() + "\"}";
 
-		mockMvc.perform(post("/confirm")
+		mockMvc.perform(post("/payment/confirm")
 				.with(csrf())
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(jsonWithoutAmount))
@@ -410,7 +410,7 @@ class PaymentControllerTest {
 	void processFail_MissingErrorCode() throws Exception {
 		String jsonWithoutErrorCode = "{\"orderId\": \"" + UUID.randomUUID() + "\", \"message\": \"에러 메시지\"}";
 
-		mockMvc.perform(post("/failsave")
+		mockMvc.perform(post("/payment/failsave")
 				.with(csrf())
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(jsonWithoutErrorCode))
@@ -427,7 +427,7 @@ class PaymentControllerTest {
 	void processFail_MissingMessage() throws Exception {
 		String jsonWithoutMessage = "{\"orderId\": \"" + UUID.randomUUID() + "\", \"errorCode\": \"INVALID_CARD\"}";
 
-		mockMvc.perform(post("/failsave")
+		mockMvc.perform(post("/payment/failsave")
 				.with(csrf())
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(jsonWithoutMessage))
@@ -444,7 +444,7 @@ class PaymentControllerTest {
 	void cancelPayment_MissingOrderId() throws Exception {
 		String jsonWithoutOrderId = "{\"cancelReason\": \"구매자 취소\"}";
 
-		mockMvc.perform(post("/cancel")
+		mockMvc.perform(post("/payment/cancel")
 				.with(csrf())
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(jsonWithoutOrderId))
