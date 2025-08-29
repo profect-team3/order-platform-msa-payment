@@ -13,11 +13,6 @@ java {
     }
 }
 
-ext {
-    querydslVersion = '5.0.0'
-}
-
-
 configurations {
     compileOnly {
         extendsFrom annotationProcessor
@@ -37,7 +32,7 @@ dependencies {
     runtimeOnly 'org.postgresql:postgresql'
 
     // security
-    implementation files('libs/msa-common-util-1.0.0-plain.jar')
+    implementation files('libs/msa-common-util-1.0.1-plain.jar')
     implementation "org.springframework.boot:spring-boot-starter-security"
     implementation "org.springframework.boot:spring-boot-starter-oauth2-resource-server"
 
