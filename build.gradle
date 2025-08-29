@@ -37,7 +37,7 @@ dependencies {
     runtimeOnly 'org.postgresql:postgresql'
 
     // security
-    implementation files('libs/msa-common-security-1.0.8-plain.jar')
+    implementation files('libs/msa-common-util-1.0.0-plain.jar')
     implementation "org.springframework.boot:spring-boot-starter-security"
     implementation "org.springframework.boot:spring-boot-starter-oauth2-resource-server"
 
@@ -53,7 +53,6 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok'
 
     // test
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'

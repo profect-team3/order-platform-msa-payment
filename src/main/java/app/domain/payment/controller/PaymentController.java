@@ -7,12 +7,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import app.commonUtil.apiPayload.ApiResponse;
 import app.domain.payment.service.PaymentService;
 import app.domain.payment.model.dto.request.CancelPaymentRequest;
 import app.domain.payment.model.dto.request.PaymentConfirmRequest;
 import app.domain.payment.model.dto.request.PaymentFailRequest;
 import app.domain.payment.status.PaymentSuccessStatus;
-import app.global.apiPayload.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;

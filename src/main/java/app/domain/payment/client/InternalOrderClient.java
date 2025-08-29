@@ -12,8 +12,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.beans.factory.annotation.Value;
 
+import app.commonUtil.apiPayload.ApiResponse;
 import app.domain.payment.model.dto.request.OrderInfo;
-import app.global.apiPayload.ApiResponse;
 
 @Component
 public class InternalOrderClient {

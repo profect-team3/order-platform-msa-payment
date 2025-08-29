@@ -19,7 +19,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.Authentication;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import app.commonSecurity.TokenPrincipalParser;
+import app.commonUtil.apiPayload.ApiResponse;
+import app.commonUtil.apiPayload.code.status.ErrorStatus;
+import app.commonUtil.apiPayload.exception.GeneralException;
+import app.commonUtil.security.TokenPrincipalParser;
 import app.domain.payment.client.InternalOrderClient;
 import app.domain.payment.model.dto.request.CancelPaymentRequest;
 import app.domain.payment.model.dto.request.OrderInfo;
@@ -33,9 +36,6 @@ import app.domain.payment.model.repository.PaymentEtcRepository;
 import app.domain.payment.model.repository.PaymentRepository;
 import app.domain.payment.service.PaymentService;
 import app.domain.payment.status.PaymentErrorStatus;
-import app.global.apiPayload.ApiResponse;
-import app.global.apiPayload.code.status.ErrorStatus;
-import app.global.apiPayload.exception.GeneralException;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("PaymentService 단위 테스트 (MSA 전환 반영)")
