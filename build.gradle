@@ -13,11 +13,6 @@ java {
     }
 }
 
-ext {
-    querydslVersion = '5.0.0'
-}
-
-
 configurations {
     compileOnly {
         extendsFrom annotationProcessor
@@ -37,12 +32,12 @@ dependencies {
     runtimeOnly 'org.postgresql:postgresql'
 
     // security
-    implementation files('libs/msa-common-security-1.0.8-plain.jar')
+    implementation files('libs/msa-common-util-1.0.1-plain.jar')
     implementation "org.springframework.boot:spring-boot-starter-security"
     implementation "org.springframework.boot:spring-boot-starter-oauth2-resource-server"
 
     // cloud
-    implementation platform("org.springframework.cloud:spring-cloud-dependencies:${rootProject.ext.springCloudVersion}")
+    implementation platform("org.springframework.cloud:spring-cloud-dependencies:2025.0.0")
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
 
     // docs
@@ -53,7 +48,6 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok'
 
     // test
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'

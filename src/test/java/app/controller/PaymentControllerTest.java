@@ -21,6 +21,8 @@ import org.springframework.web.context.WebApplicationContext;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import app.commonUtil.apiPayload.code.status.ErrorStatus;
+import app.commonUtil.apiPayload.exception.GeneralException;
 import app.domain.payment.controller.PaymentController;
 import app.domain.payment.model.dto.request.CancelPaymentRequest;
 import app.domain.payment.model.dto.request.PaymentConfirmRequest;
@@ -28,8 +30,6 @@ import app.domain.payment.model.dto.request.PaymentFailRequest;
 import app.domain.payment.service.PaymentService;
 import app.domain.payment.status.PaymentErrorStatus;
 import app.domain.payment.status.PaymentSuccessStatus;
-import app.global.apiPayload.code.status.ErrorStatus;
-import app.global.apiPayload.exception.GeneralException;
 
 @WebMvcTest(PaymentController.class)
 @DisplayName("PaymentController Test")
