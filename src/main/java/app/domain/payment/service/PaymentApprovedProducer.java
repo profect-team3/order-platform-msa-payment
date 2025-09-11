@@ -23,6 +23,7 @@ public class PaymentApprovedProducer {
 			String payloadJson = objectMapper.writeValueAsString(payload);
 
 			ProducerRecord<String, String> record = new ProducerRecord<>("payment.result", payloadJson);
+
 			record.headers().add(new RecordHeader("eventType", headers.get("eventType").toString().getBytes()));
 			if (headers.get("orderId") != null) {
 				record.headers().add(new RecordHeader("orderId", headers.get("orderId").toString().getBytes()));

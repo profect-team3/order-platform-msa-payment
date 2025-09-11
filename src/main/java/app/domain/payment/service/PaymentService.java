@@ -12,6 +12,7 @@ import java.util.UUID;
 
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
@@ -50,7 +51,7 @@ public class PaymentService {
 	private final PaymentEtcRepository paymentEtcRepository;
 	private final InternalOrderClient internalOrderClient;
 	private final TokenPrincipalParser tokenPrincipalParser;
-	private final PaymentApprovedProducer paymentApprovedProducer;
+	private final ApplicationEventPublisher publisher;
 
 	private String generateIdempotencyKey(Long userId, String orderId) {
 		try {
@@ -190,14 +191,17 @@ public class PaymentService {
 		paymentEtcRepository.save(paymentEtc);
 
 
-		Map<String, Object> body = new HashMap<>();
-		body.put("userID",userId);
 
 		Map<String, Object> headers = new HashMap<>();
 		headers.put("eventType", "success");
 		headers.put("orderId",request.getOrderId());
 
-		paymentApprovedProducer.sendPaymentApproved(headers,body);
+		Map<String, Object> map = new HashMap<>();
+		map.put("userID",userId);
+		map.put("headers", headers);
+
+
+		publisher.publishEvent(map);
 
 		return "결제 승인이 완료되었습니다.";
 
