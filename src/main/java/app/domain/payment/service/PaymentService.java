@@ -6,6 +6,8 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import org.json.JSONObject;
@@ -48,6 +50,7 @@ public class PaymentService {
 	private final PaymentEtcRepository paymentEtcRepository;
 	private final InternalOrderClient internalOrderClient;
 	private final TokenPrincipalParser tokenPrincipalParser;
+	private final PaymentApprovedProducer paymentApprovedProducer;
 
 	private String generateIdempotencyKey(Long userId, String orderId) {
 		try {
@@ -186,19 +189,18 @@ public class PaymentService {
 
 		paymentEtcRepository.save(paymentEtc);
 
-		if (isSuccess) {
-			ApiResponse<String> clearCartItemsResponse;
-			try{
-				clearCartItemsResponse =internalOrderClient.clearCartItems();
-			} catch (HttpClientErrorException | HttpServerErrorException e){
-				log.error("Order Service Error: {}",e.getResponseBodyAsString());
-				throw new GeneralException(PaymentErrorStatus.CLEAR_CART_FAILED);
-			}
 
-			return "결제 승인이 완료되었습니다.";
-		} else {
-			throw new GeneralException(PaymentErrorStatus.PAYMENT_CONFIRM_FAILED);
-		}
+		Map<String, Object> body = new HashMap<>();
+		body.put("userID",userId);
+
+		Map<String, Object> headers = new HashMap<>();
+		headers.put("eventType", "success");
+		headers.put("orderId",request.getOrderId());
+
+		paymentApprovedProducer.sendPaymentApproved(headers,body);
+
+		return "결제 승인이 완료되었습니다.";
+
 	}
 
 	@Transactional
