@@ -23,6 +23,7 @@ import app.commonUtil.apiPayload.code.status.ErrorStatus;
 import app.commonUtil.apiPayload.exception.GeneralException;
 import app.commonUtil.security.TokenPrincipalParser;
 import app.domain.payment.client.InternalOrderClient;
+import app.domain.payment.kafka.PaymentApprovedProducer;
 import app.domain.payment.model.dto.request.CancelPaymentRequest;
 import app.domain.payment.model.dto.request.OrderInfo;
 import app.domain.payment.model.dto.request.PaymentConfirmRequest;
@@ -223,31 +224,45 @@ public class PaymentService {
 	public String cancelPayment(CancelPaymentRequest request, Authentication authentication) {
 		String userIdStr = tokenPrincipalParser.getUserId(authentication);
 		Long userId = Long.parseLong(userIdStr);
-		ApiResponse<OrderInfo> orderInfoResponse;
-		try {
-			orderInfoResponse = internalOrderClient.getOrderInfo(request.getOrderId());
-		} catch (HttpServerErrorException | HttpClientErrorException e){
-			log.error("Order Service Error: {}", e.getResponseBodyAsString());
-			throw new GeneralException(ErrorStatus.ORDER_NOT_FOUND);
-		}
+		return cancelPaymentByUserId(request.getOrderId(), userId, request.getCancelReason());
+	}
 
-		OrderInfo orderInfo = orderInfoResponse.result();
-		if (!orderInfo.getIsRefundable()) {
-			throw new GeneralException(PaymentErrorStatus.PAYMENT_NOT_REFUNDABLE);
-		}
+	@Transactional
+	public String cancelPaymentByUserId(UUID orderId, Long userId) {
+		return cancelPaymentByUserId(orderId, userId, "재고 부족");
+	}
 
-		Payment payment = paymentRepository.findByOrdersId(request.getOrderId())
-			.orElseThrow(() -> new GeneralException(ErrorStatus.PAYMENT_NOT_FOUND));
+	private String cancelPaymentByUserId(UUID orderId, Long userId, String cancelReason) {
+		log.info("Starting payment cancellation for orderId: {}, userId: {}", orderId, userId);
+		
+		// ApiResponse<OrderInfo> orderInfoResponse;
+		// try {
+		// 	orderInfoResponse = internalOrderClient.getOrderInfo(orderId);
+		// } catch (HttpServerErrorException | HttpClientErrorException e){
+		// 	log.error("Order Service Error for orderId {}: {}", orderId, e.getResponseBodyAsString());
+		// 	throw new GeneralException(ErrorStatus.ORDER_NOT_FOUND);
+		// }
+		//
+		// OrderInfo orderInfo = orderInfoResponse.result();
+		// if (!orderInfo.getIsRefundable()) {
+		// 	log.error("Payment not refundable for orderId: {}", orderId);
+		// 	throw new GeneralException(PaymentErrorStatus.PAYMENT_NOT_REFUNDABLE);
+		// }
 
-		String responseWithPrefix = callTossCancelApi(payment.getPaymentKey(), request.getCancelReason(), userId,
-			request.getOrderId());
+		Payment payment = paymentRepository.findByOrdersId(orderId)
+			.orElseThrow(() -> {
+				log.error("Payment not found for orderId: {}", orderId);
+				return new GeneralException(ErrorStatus.PAYMENT_NOT_FOUND);
+			});
+
+		String responseWithPrefix = callTossCancelApi(payment.getPaymentKey(), cancelReason, userId, orderId);
 		boolean isSuccess = responseWithPrefix.startsWith("success:");
 		String responseBody = responseWithPrefix.substring(responseWithPrefix.indexOf(":") + 1);
 
 		if (isSuccess) {
 			ApiResponse<String> updateOrderStatusResponse;
 			try{
-				updateOrderStatusResponse=internalOrderClient.updateOrderStatus(request.getOrderId(), "REFUNDED");
+				updateOrderStatusResponse=internalOrderClient.updateOrderStatus(orderId, "REFUNDED");
 			} catch (HttpServerErrorException | HttpClientErrorException e){
 				log.error("Order Service Error: {}", e.getResponseBodyAsString());
 				throw new GeneralException(PaymentErrorStatus.ORDER_UPDATE_STATUS_FAILED);
@@ -255,7 +270,7 @@ public class PaymentService {
 
 			ApiResponse<String> addOrderHistoryResponse;
 			try {
-				addOrderHistoryResponse =internalOrderClient.addOrderHistory(request.getOrderId(), "cancel");
+				addOrderHistoryResponse =internalOrderClient.addOrderHistory(orderId, "cancel");
 			} catch (HttpServerErrorException | HttpClientErrorException e){
 				log.error("Order Service Error: {}", e.getResponseBodyAsString());
 				throw new GeneralException(PaymentErrorStatus.ORDER_ADD_STATUS_FAILED);
@@ -271,8 +286,10 @@ public class PaymentService {
 		paymentEtcRepository.save(paymentEtc);
 
 		if (isSuccess) {
+			log.info("Payment cancellation completed for orderId: {}", orderId);
 			return "결제 취소가 완료되었습니다.";
 		} else {
+			log.error("Payment cancellation failed for orderId: {}, response: {}", orderId, responseBody);
 			throw new GeneralException(ErrorStatus._INTERNAL_SERVER_ERROR);
 		}
 	}

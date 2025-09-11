@@ -1,4 +1,4 @@
-package app.domain.payment.service;
+package app.domain.payment.kafka;
 
 import java.util.HashMap;
 import java.util.Map;
