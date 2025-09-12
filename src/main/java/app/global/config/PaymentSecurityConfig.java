@@ -14,7 +14,7 @@ public class PaymentSecurityConfig {
 	@Order(0)
 	public SecurityFilterChain paymentFilterChain(HttpSecurity http) throws Exception {
 		http
-			.securityMatcher("/checkout", "/success", "/fail")
+			.securityMatcher("/checkout", "/success", "/fail", "/style.css")
 			.authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
 			.csrf(AbstractHttpConfigurer::disable);
 
