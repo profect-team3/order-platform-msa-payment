@@ -24,6 +24,7 @@ import app.commonUtil.apiPayload.exception.GeneralException;
 import app.commonUtil.security.TokenPrincipalParser;
 import app.domain.payment.client.InternalOrderClient;
 import app.domain.payment.kafka.PaymentApprovedProducer;
+import app.domain.payment.kafka.PaymentResultEvent;
 import app.domain.payment.model.dto.request.CancelPaymentRequest;
 import app.domain.payment.model.dto.request.OrderInfo;
 import app.domain.payment.model.dto.request.PaymentConfirmRequest;
@@ -192,18 +193,14 @@ public class PaymentService {
 		paymentEtcRepository.save(paymentEtc);
 
 
-
 		Map<String, Object> headers = new HashMap<>();
-		headers.put("eventType", "success");
-		headers.put("orderId",request.getOrderId());
+		headers.put("eventType", isSuccess ? "success" : "fail");
+		headers.put("orderId", request.getOrderId());
 
-		Map<String, Object> map = new HashMap<>();
-		map.put("userID",userId);
-		map.put("headers", headers);
+		PaymentResultEvent event =
+			new PaymentResultEvent(this, request.getOrderId(), userId, headers);
 
-
-		publisher.publishEvent(map);
-
+		publisher.publishEvent(event);
 		return "결제 승인이 완료되었습니다.";
 
 	}

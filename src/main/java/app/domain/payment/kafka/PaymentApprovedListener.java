@@ -17,16 +17,14 @@ public class PaymentApprovedListener {
 	private final PaymentApprovedProducer paymentApprovedProducer;
 
 	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-	public void onAfterCommit(Map<String,Object> event) {
+	public void onAfterCommit(PaymentResultEvent e) {
 
-		Map<String, Object> headers =(Map<String, Object>) event.get("headers");
-		Map<String, Object> payload = new HashMap<>();
-		payload.put("userId",headers.get("userId"));
+		Map<String,Object> payload = Map.of("userId", e.getUserId());
 
 		try {
-			paymentApprovedProducer.sendPaymentApproved(headers, payload);
+			paymentApprovedProducer.sendPaymentApproved(e.getHeaders(), payload);
 		} catch (Exception ex) {
-			log.error("Kafka publish failed for orderId={} err={}", event.get("orderId"), ex.toString());
+			log.error("Kafka publish failed for orderId={} err={}", e.getHeaders().get("orderId"), ex.toString());
 		}
 	}
 }
