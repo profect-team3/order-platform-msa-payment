@@ -22,21 +22,6 @@ public class RestTemplateConfig {
 	private final TokenPrincipalParser tokenPrincipalParser;
 
 	@Bean
-	public ObjectMapper objectMapper() {
-		ObjectMapper mapper = new ObjectMapper();
-		mapper.registerModule(new JavaTimeModule());
-		mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-		mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
-
-		mapper.configure(com.fasterxml.jackson.databind.MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS, true);
-
-		mapper.configure(com.fasterxml.jackson.databind.DeserializationFeature.READ_ENUMS_USING_TO_STRING, true);
-
-		return mapper;
-	}
-
-
-	@Bean
 	public RestTemplate restTemplate(RestTemplateBuilder builder, ObjectMapper objectMapper) {
 		MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();
 		converter.setObjectMapper(objectMapper);
