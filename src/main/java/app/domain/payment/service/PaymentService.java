@@ -262,21 +262,23 @@ public class PaymentService {
 		boolean isSuccess = responseWithPrefix.startsWith("success:");
 		String responseBody = responseWithPrefix.substring(responseWithPrefix.indexOf(":") + 1);
 
-		if (isSuccess && !isEventBased) {
-			ApiResponse<String> updateOrderStatusResponse;
-			try{
-				updateOrderStatusResponse=internalOrderClient.updateOrderStatus(orderId, "REFUNDED");
-			} catch (HttpServerErrorException | HttpClientErrorException e){
-				log.error("Order Service Error: {}", e.getResponseBodyAsString());
-				throw new GeneralException(PaymentErrorStatus.ORDER_UPDATE_STATUS_FAILED);
-			}
+		if (isSuccess) {
+			if (!isEventBased) {
+				ApiResponse<String> updateOrderStatusResponse;
+				try{
+					updateOrderStatusResponse=internalOrderClient.updateOrderStatus(orderId, "REFUNDED");
+				} catch (HttpServerErrorException | HttpClientErrorException e){
+					log.error("Order Service Error: {}", e.getResponseBodyAsString());
+					throw new GeneralException(PaymentErrorStatus.ORDER_UPDATE_STATUS_FAILED);
+				}
 
-			ApiResponse<String> addOrderHistoryResponse;
-			try {
-				addOrderHistoryResponse =internalOrderClient.addOrderHistory(orderId, "cancel");
-			} catch (HttpServerErrorException | HttpClientErrorException e){
-				log.error("Order Service Error2: {}", e.getResponseBodyAsString());
-				throw new GeneralException(PaymentErrorStatus.ORDER_ADD_STATUS_FAILED);
+				ApiResponse<String> addOrderHistoryResponse;
+				try {
+					addOrderHistoryResponse =internalOrderClient.addOrderHistory(orderId, "cancel");
+				} catch (HttpServerErrorException | HttpClientErrorException e){
+					log.error("Order Service Error2: {}", e.getResponseBodyAsString());
+					throw new GeneralException(PaymentErrorStatus.ORDER_ADD_STATUS_FAILED);
+				}
 			}
 			payment.updatePaymentStatus(PaymentStatus.CANCELLED);
 		}
