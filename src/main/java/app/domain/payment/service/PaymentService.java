@@ -229,25 +229,31 @@ public class PaymentService {
 
 	@Transactional
 	public String cancelPaymentByUserId(UUID orderId, Long userId) {
-		return cancelPaymentByUserId(orderId, userId, "재고 부족");
+		return processCancelPayment(orderId, userId, "재고 부족", true);
 	}
 
 	private String cancelPaymentByUserId(UUID orderId, Long userId, String cancelReason) {
+		return processCancelPayment(orderId, userId, cancelReason, false);
+	}
+
+	private String processCancelPayment(UUID orderId, Long userId, String cancelReason, boolean isEventBased) {
 		log.info("Starting payment cancellation for orderId: {}, userId: {}", orderId, userId);
-		
-		// ApiResponse<OrderInfo> orderInfoResponse;
-		// try {
-		// 	orderInfoResponse = internalOrderClient.getOrderInfo(orderId);
-		// } catch (HttpServerErrorException | HttpClientErrorException e){
-		// 	log.error("Order Service Error for orderId {}: {}", orderId, e.getResponseBodyAsString());
-		// 	throw new GeneralException(ErrorStatus.ORDER_NOT_FOUND);
-		// }
-		//
-		// OrderInfo orderInfo = orderInfoResponse.result();
-		// if (!orderInfo.getIsRefundable()) {
-		// 	log.error("Payment not refundable for orderId: {}", orderId);
-		// 	throw new GeneralException(PaymentErrorStatus.PAYMENT_NOT_REFUNDABLE);
-		// }
+
+		if (!isEventBased) {
+			ApiResponse<OrderInfo> orderInfoResponse;
+			try {
+				orderInfoResponse = internalOrderClient.getOrderInfo(orderId);
+			} catch (HttpServerErrorException | HttpClientErrorException e){
+				log.error("Order Service Error for orderId {}: {}", orderId, e.getResponseBodyAsString());
+				throw new GeneralException(ErrorStatus.ORDER_NOT_FOUND);
+			}
+
+			OrderInfo orderInfo = orderInfoResponse.result();
+			if (!orderInfo.getIsRefundable()) {
+				log.error("Payment not refundable for orderId: {}", orderId);
+				throw new GeneralException(PaymentErrorStatus.PAYMENT_NOT_REFUNDABLE);
+			}
+		}
 
 		Payment payment = paymentRepository.findByOrdersId(orderId)
 			.orElseThrow(() -> {
@@ -259,7 +265,7 @@ public class PaymentService {
 		boolean isSuccess = responseWithPrefix.startsWith("success:");
 		String responseBody = responseWithPrefix.substring(responseWithPrefix.indexOf(":") + 1);
 
-		if (isSuccess) {
+		if (isSuccess && !isEventBased) {
 			ApiResponse<String> updateOrderStatusResponse;
 			try{
 				updateOrderStatusResponse=internalOrderClient.updateOrderStatus(orderId, "REFUNDED");
@@ -272,7 +278,7 @@ public class PaymentService {
 			try {
 				addOrderHistoryResponse =internalOrderClient.addOrderHistory(orderId, "cancel");
 			} catch (HttpServerErrorException | HttpClientErrorException e){
-				log.error("Order Service Error: {}", e.getResponseBodyAsString());
+				log.error("Order Service Error2: {}", e.getResponseBodyAsString());
 				throw new GeneralException(PaymentErrorStatus.ORDER_ADD_STATUS_FAILED);
 			}
 			payment.updatePaymentStatus(PaymentStatus.CANCELLED);
@@ -287,7 +293,7 @@ public class PaymentService {
 
 		if (isSuccess) {
 			log.info("Payment cancellation completed for orderId: {}", orderId);
-			return "결제 취소가 완료되었습니다.";
+			return isEventBased ? "환불 처리가 완료되었습니다." : "결제 취소가 완료되었습니다.";
 		} else {
 			log.error("Payment cancellation failed for orderId: {}, response: {}", orderId, responseBody);
 			throw new GeneralException(ErrorStatus._INTERNAL_SERVER_ERROR);
