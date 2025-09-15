@@ -20,14 +20,11 @@ public class PaymentRefundConsumer {
     private final ObjectMapper objectMapper;
 
     @KafkaListener(topics = "refund.request", groupId = "refund.consumer")
-    public void handleRefundRequest(@Header("orderId") String orderId, String message) {
+    public void handleRefundRequest(@Header("orderId") String orderId, @Header("userId") String userId) {
         try {
-            Map<String, Object> messageMap = objectMapper.readValue(message, Map.class);
-            String userId = messageMap.get("userId").toString();
-            
             String result = paymentService.cancelPaymentByUserId(UUID.fromString(orderId), Long.parseLong(userId));
         } catch (Exception e) {
-            log.error("Failed to process refund request for orderId: {}, message: {}", orderId, message, e);
+            log.error("Failed to process refund request for orderId: {}", orderId, e);
         }
     }
 }
