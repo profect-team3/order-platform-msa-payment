@@ -25,6 +25,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'net.logstash.logback:logstash-logback-encoder:7.4'
+
     implementation 'org.json:json:20231013'
 
     // db
@@ -47,7 +49,7 @@ dependencies {
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
 
-
+    // kafka
     implementation 'org.springframework.kafka:spring-kafka'
 
     // test
