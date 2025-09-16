@@ -27,38 +27,42 @@ configurations {
 
 
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    // core
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
-    compileOnly 'org.projectlombok:lombok'
-    annotationProcessor 'org.projectlombok:lombok'
-    runtimeOnly 'org.postgresql:postgresql'
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'com.h2database:h2'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'net.logstash.logback:logstash-logback-encoder:7.4'
 
-    // JSON
     implementation 'org.json:json:20231013'
 
-    // Kafka
-    implementation 'org.springframework.kafka:spring-kafka'
+    // db
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    runtimeOnly 'org.postgresql:postgresql'
 
-    // TEST
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'com.h2database:h2'
-    testRuntimeOnly 'com.h2database:h2'
-
+    // security
     implementation files('libs/msa-common-util-1.0.4-plain.jar')
     implementation "org.springframework.boot:spring-boot-starter-security"
     implementation "org.springframework.boot:spring-boot-starter-oauth2-resource-server"
 
-    testImplementation 'org.springframework.security:spring-security-test'
+    // docs
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
 
+    // lombok
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    // cloud
     implementation "org.springframework.boot:spring-boot-starter-actuator"
 
+    // kafka
+    implementation 'org.springframework.kafka:spring-kafka'
 
+    // test
+    testRuntimeOnly 'com.h2database:h2'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'com.h2database:h2'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testImplementation 'org.springframework.security:spring-security-test'
 }
 
 clean {
