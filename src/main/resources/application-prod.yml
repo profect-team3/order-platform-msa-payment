@@ -36,3 +36,7 @@ jwt:
 toss:
   clientKey: ${TOSS_CLIENT_KEY}
   secretKey: ${TOSS_SECRET_KEY}
+
+order:
+  service:
+    url:${ORDER_SVC_URI}
