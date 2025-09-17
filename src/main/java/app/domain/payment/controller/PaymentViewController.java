@@ -11,7 +11,7 @@ import lombok.RequiredArgsConstructor;
 
 @Controller
 @RequiredArgsConstructor
-@RequestMapping()
+@RequestMapping("/payment")
 public class PaymentViewController {
 
 	@Value("${TOSS_CLIENT_KEY}")
